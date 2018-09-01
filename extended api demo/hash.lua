@@ -1,0 +1,112 @@
+local data = "3B8027BFA8E9CA4F09F291B9867AB1487EB38852DCC8DEA87D3F9DE9B971A92F846346A2654B78D7F52582330AE034CA797E5F5C9FD2C9AC5A1901ACA34DD89E3B8027BFA8E9CA4F09F291B9867AB1487EB38852DCC8DEA87D3F9DE9B971A92F846346A2654B78D7F52582330AE034CA797E5F5C9FD2C9AC5A1901ACA34DD89E";
+
+local ret = "";
+
+ret = sha1(data);
+
+if(ret ~= "70764E6B9E44A8EA58FDB02A63B8E4BD0B50273E")
+then
+	error("sha1 fail");
+	print(ret);
+else
+	print("sha1 pass");
+end
+
+
+ret = sha224(data);
+
+if(ret ~= "90E501E05378CFDC0697DCE0D0A194D8A72D3D91CF8C4486CCF75256")
+then
+	error("sha224 fail");
+	print(ret);
+else
+	print("sha224 pass");
+end
+
+
+ret = sha256(data);
+
+if(ret ~= "CCD3A81120E949E532965D35C326D85AF7C7618E135AF995C4ED52F6137CD3C3")
+then
+	error("sha256 fail");
+	print(ret);
+else
+	print("sha256 pass");
+end
+
+
+ret = sha384(data);
+
+if(ret ~= "941FDEA5D5A3D5271D6E5B0A3EA66B1D2AA1F293302DCAC8EEE61CA2D8E67FE54C64B65D8A3A4024103F9B22B506382E")
+then
+	error("sha384 fail");
+	print(ret);
+else
+	print("sha384 pass");
+end
+
+
+ret = sha512(data);
+
+if(ret ~= "F2476D671C35B82152CEF80279579A45CA561065F79328D3F6C2CC163F57D2AA62ADBBCC1CC624509F188048AF5D68CA9554329E4E267C0B26CE78DAFF414021")
+then
+	error("sha512 fail");
+	print(ret);
+else
+	print("sha512 pass");
+end
+
+
+ret = md5(data);
+
+if(ret ~= "CBDACA81699EE4438033B88F1FBDF6CC")
+then
+	error("md5 fail");
+	print(ret);
+else
+	print("md5 pass");
+end
+
+
+ret = sha3_224(data);
+
+if(ret ~= "1482ED1C99F53E2FCB64FA91B04D99683934B82CD2672B1FF8041F90")
+then
+	error("sha3_224 fail");
+	print(ret);
+else
+	print("sha3_224 pass");
+end
+
+
+ret = sha3_256(data);
+
+if(ret ~= "70843AA4F7DA7173400E2CFA3B29AA12B79B614FE8DAC0C5070C25E35C8F20A8")
+then
+	error("sha3_256 fail");
+	print(ret);
+else
+	print("sha3_256 pass");
+end
+
+
+ret = sha3_384(data);
+
+if(ret ~= "B1A3A59DF469685A0FF685F433E3312A1C46950100EE70011D986D7D3B1DBC0A1AED189648B2013893AF6E8E666CD41C")
+then
+	error("sha3_384 fail");
+	print(ret);
+else
+	print("sha3_384 pass");
+end
+
+
+ret = sha3_512(data);
+
+if(ret ~= "85846AD141B6DE9EC18255C00DA2F70CB6FAA75B1605AA5F3CB345C2913E9CCB35AF1D78ABC0256347200FBEA73D1D0ABB0C43E38A81E13784610A1B3277665A")
+then
+	error("sha3_512 fail");
+	print(ret);
+else
+	print("sha3_512 pass");
+end
