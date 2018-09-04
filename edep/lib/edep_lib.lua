@@ -80,6 +80,37 @@ function Send_Mac (apdu, key, sw)
 	Send (apdu..mac,sw);
 end
 
+function Send_Cipher_Mac (apdu, key, sw)
+	apdu = string.gsub(apdu," ","");
+	
+	local apdu_data = string.format("%02X",string.len(apdu)/2-5) .. string.sub(apdu, 11);
+	
+	if(string.len(apdu_data)%16 ~=0)
+	then
+		apdu_data = pad(apdu_data);
+	end
+	
+	local cipher = triple_des_ecb_encrypt(apdu_data, key);
+	
+	if (cipher  == nil)
+	then
+		error("triple_des_ecb_encrypt throw exception");
+		return;
+	end	
+	
+	apdu = string.sub(apdu, 1, 8) .. string.format("%02X", string.len(cipher)/2) .. cipher;
+	
+	Send_Mac(apdu, key, sw);
+end
+
+function Ext_Auth (p1p2, key, sw)
+	local rand = Send ("0084000008","9000");
+	rand = string.sub(rand,1,16);
+	local mac = triple_des_ecb_encrypt(rand, key);
+	local apdu = '0084' .. p1p2 .. '08' ..mac;
+	Send(apdu,sw);
+end
+
 function Load(p2, loadkey_index, load_key, tac_key)
 	tac_key = string.gsub(tac_key," ","");
 	local apdu = '8050 00' .. p2 .. '0B' .. loadkey_index .. Transaction_Amount .. Terminal_Name;
@@ -199,14 +230,6 @@ function Load(p2, loadkey_index, load_key, tac_key)
 		end
 		
 	end
-end
-
-function EP_Load(index, loadkey, tackey)
-	Load(EP, index, loadkey, tackey);
-end
-
-function ED_Load(index, loadkey, tackey)
-	Load(ED, index, loadkey, tackey);
 end
 
 
@@ -331,6 +354,129 @@ function Purchase(p2, purchase_key_index, purchase_key, tac_key)
 		
 		Terminal_ATC = string.sub(Terminal_ATC,-8);
 	end		
+end
+
+
+
+function EP_CAPP_Purchase(cmd_80dc, purchase_key_index, purchase_key, tac_key)
+	tac_key = string.gsub(tac_key," ","");
+	local apdu = '8050 0302 0B' .. purchase_key_index .. Transaction_Amount .. Terminal_Name;
+	local res = Send(apdu, '9000');
+	local sessionkey;
+	local data;
+	if (res  == nil)
+	then
+		error("Initialize_For_CAPP_Purchase throw exception");
+		return;
+	elseif (string.sub(res,-4) == '9000')
+	then
+		local balance = string.sub(res,1,8);
+		local atc = string.sub(res,9,12);
+		local overdrawn = string.sub(res,13,18);
+		local key_version = string.sub(res,19,20);
+		local key_id = string.sub(res,21,22);
+		local rand = string.sub(res,23,30);	
+		
+		if type(cmd_80dc) ~= "table" then
+			error("cmd_80dc is not table");
+			return;
+		end
+		
+		for key, cmd in pairs(cmd_80dc) do  
+			res = Send(cmd, '9000');
+			if (res  == nil)
+			then
+				error("Update CAPP Data Cache throw exception");
+				return;
+			end
+		end
+		
+		data = rand .. atc .. string.sub(Terminal_ATC,-4);;
+		
+		sessionkey = triple_des_ecb_encrypt(data, purchase_key);
+		--print(sessionkey);
+		if(sessionkey == nil)
+		then
+			error('Session DPK is nil');
+			return;
+		end
+				
+		EP_Balance = balance;
+		EP_Offline_ATC = atc;
+		data = Transaction_Amount .. '09' .. Terminal_Name .. Transaction_Date .. Transaction_Time;			
+				
+		data = pad(data);
+		
+		local mac1 = des_mac(data, sessionkey);
+		mac1 = string.sub(mac1,1,8);
+		
+		apdu = '8054 0100 0F' .. Terminal_ATC .. Transaction_Date .. Transaction_Time .. mac1;
+		res = Send(apdu, '9000');
+			
+		if (res  == nil)
+		then
+			error("Debit_For_CAPP_Purchase throw exception");
+			return;
+		elseif (string.sub(res,-4) == '9000')
+		then
+			local amount;
+			local tac = string.sub(res,1,8);
+			local mac2 = string.sub(res,9,16);
+			
+			local mac = des_mac(pad(Transaction_Amount), sessionkey);
+			mac = string.sub(mac,1,8);
+			if(mac2 ~= mac)
+			then
+				error('Mac2 Expected:', mac);
+				return;
+			end
+						
+			amount = big_num_subtract(EP_Balance,Transaction_Amount,16);
+			while(string.len(amount)<8)
+			do
+				amount = "0"..amount;
+			end	
+			amount = string.sub(amount,-8);
+			EP_Balance = amount;
+	
+			if(string.len(tac_key) == 32)
+			then
+				tac_key = xor(string.sub(tac_key,1,16), string.sub(tac_key,17));
+				local tac = string.sub(res,1,8);
+				
+				data = Transaction_Amount .. '09' .. Terminal_Name .. Terminal_ATC .. Transaction_Date .. Transaction_Time;			
+		
+				data = pad(data);
+
+				mac = des_mac(data, tac_key);
+				mac = string.sub(mac,1,8);
+				if(tac ~= mac)
+				then
+					error('TAC Expected:', mac);
+				return;
+				end
+			else
+				print('TAC Not Verify')
+			end	
+		end	
+
+		Terminal_ATC = big_num_add(Terminal_ATC,'1',16);
+		while(string.len(Terminal_ATC)<8)
+		do
+			Terminal_ATC = "0"..Terminal_ATC;
+		end	
+		
+		Terminal_ATC = string.sub(Terminal_ATC,-8);
+	end		
+
+end
+
+function EP_Load(index, loadkey, tackey)
+	Load(EP, index, loadkey, tackey);
+end
+
+function ED_Load(index, loadkey, tackey)
+	Load(ED, index, loadkey, tackey);
 end
 
 function EP_Purchase(index, loadkey, tackey)

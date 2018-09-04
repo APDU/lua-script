@@ -8,7 +8,7 @@ require("pboc_config")
 Reset();
 selectPSE();
 selectPBOC();
---TAG9F66 = "A6000000"
+--TAG9F66 = "40000000"
 GPO();
 --VerifyPIN("123456");
 GAC1("80");

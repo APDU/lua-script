@@ -314,6 +314,53 @@ function  GPO ()
 end
 
 
+function  GPO_NoReadAFL ()
+	local pdolData = MakeDOL(TAG9F38);
+	
+	local pdolDataLen = string.len(pdolData)/2;	
+	local data = Send("80A80000"..string.format("%02X",pdolDataLen+2).."83"..string.format("%02X",pdolDataLen)..pdolData ,"9000");
+				
+	local firstbyte = string.sub(data,1,2); 
+	
+	if (firstbyte  == "80")
+	then
+		TAG82 = string.sub(data,5,8);	
+		TAG94 = string.sub(data,9,-5);	
+		print("PBOC GPO");
+	else  
+		data77 = getTLV(data,"77");
+		TAG82 = getTLV(data77,"82");
+		TAG94 = getTLV(data77,"94");
+		print("qPBOC GPO");	
+	end	
+end
+
+
+function  AppendRecord (apdu, key)
+	local res = Send('80CA9F3600',"9000")
+	TAG9F36 = getTLV(res,"9F36");
+	apdu = string.gsub(apdu," ","");
+	local head4 = string.sub(apdu,1,8)
+	local data = string.sub(apdu,11,-1)
+	local len = string.format("%02X",string.len(data)/2+4);
+	local cipherkey = triple_des_ecb_encrypt(string.sub(data, 1, 32), key);
+	data = cipherkey .. string.sub(data, 33);
+	local res = triple_des_mac(pad(head4..len..data),key,"000000000000"..TAG9F36);	
+	local mac = string.sub(res,0,8);	
+	Send(head4..len..data..mac,"9000");
+end
+
+
+function  Updata_CAPP_Data_Cache (apdu, key)
+	apdu = string.gsub(apdu," ","");
+	local head4 = string.sub(apdu,1,8)
+	local data = string.sub(apdu,11,-1)
+	local len = string.format("%02X",string.len(data)/2+4);
+	local res = triple_des_mac(pad(head4..len..data),key,"000000000000"..TAG9F36);	
+	local mac = string.sub(res,0,8);	
+	Send(head4..len..data..mac,"9000");
+end
+
 
 function  GAC1 (p1)
 	local cdolData =  MakeDOL(TAG8C);

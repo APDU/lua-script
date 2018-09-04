@@ -9,7 +9,7 @@ require("pboc_config")
 Reset();
 selectPPSE();
 selectPBOC();
-tag9F66 = "A6000000"
+TAG9F66 = "A6000000"
 GPO();
 
 
