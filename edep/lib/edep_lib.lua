@@ -107,7 +107,7 @@ function Ext_Auth (p1p2, key, sw)
 	local rand = Send ("0084000008","9000");
 	rand = string.sub(rand,1,16);
 	local mac = triple_des_ecb_encrypt(rand, key);
-	local apdu = '0084' .. p1p2 .. '08' ..mac;
+	local apdu = '0082' .. p1p2 .. '08' ..mac;
 	Send(apdu,sw);
 end
 
